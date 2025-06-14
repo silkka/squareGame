@@ -1,28 +1,5 @@
 /*
-This file is the starting point of your game.
-
-Some important procedures are:
-- game_init_window: Opens the window
-- game_init: Sets up the game state
-- game_update: Run once per frame
-- game_should_close: For stopping your game when close button is pressed
-- game_shutdown: Shuts down game and frees memory
-- game_shutdown_window: Closes window
-
-The procs above are used regardless if you compile using the `build_release`
-script or the `build_hot_reload` script. However, in the hot reload case, the
-contents of this file is compiled as part of `build/hot_reload/game.dll` (or
-.dylib/.so on mac/linux). In the hot reload cases some other procedures are
-also used in order to facilitate the hot reload functionality:
-
-- game_memory: Run just before a hot reload. That way game_hot_reload.exe has a
-	pointer to the game's memory that it can hand to the new game DLL.
-- game_hot_reloaded: Run after a hot reload so that the `g` global
-	variable can be set to whatever pointer it was in the old DLL.
-
-NOTE: When compiled as part of `build_release`, `build_debug` or `build_web`
-then this whole package is just treated as a normal Odin package. No DLL is
-created.
+	Cool Game
 */
 
 package game
@@ -33,11 +10,15 @@ import rl "vendor:raylib"
 
 PIXEL_WINDOW_HEIGHT :: 180
 
+Target :: struct {
+	pos:  rl.Vector2,
+	size: rl.Vector2,
+}
+
 Game_Memory :: struct {
-	player_pos:     rl.Vector2,
-	player_texture: rl.Texture,
-	some_number:    int,
-	run:            bool,
+	player_pos: rl.Vector2,
+	targets:    [dynamic]Target,
+	run:        bool,
 }
 
 g: ^Game_Memory
@@ -71,7 +52,6 @@ update :: proc() {
 
 	input = linalg.normalize0(input)
 	g.player_pos += input * rl.GetFrameTime() * 100
-	g.some_number += 1
 
 	if rl.IsKeyPressed(.ESCAPE) {
 		g.run = false
@@ -84,6 +64,11 @@ draw :: proc() {
 
 	rl.BeginMode2D(game_camera())
 	rl.DrawRectangle(i32(g.player_pos.x), i32(g.player_pos.y), 10, 10, rl.RED)
+
+	for t in g.targets {
+		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), 10, 10, rl.RED)
+	}
+
 	rl.EndMode2D()
 
 	rl.BeginMode2D(ui_camera())
@@ -124,16 +109,14 @@ game_init :: proc() {
 	g = new(Game_Memory)
 
 	g^ = Game_Memory {
-		run            = true,
-		some_number    = 100,
-
-		// You can put textures, sounds and music in the `assets` folder. Those
-		// files will be part any release or web build.
-		player_texture = rl.LoadTexture("assets/round_cat.png"),
+		run     = true,
+		targets = make([dynamic]Target),
 	}
 
-	game_hot_reloaded(g)
+
+	append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
 }
+
 
 @(export)
 game_should_run :: proc() -> bool {
