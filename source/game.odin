@@ -117,6 +117,9 @@ update :: proc() {
 
 		if (rl.CheckCollisionRecs(player_rect, target_rect)) {
 			g.score += 1
+			if (g.score % 5 == 0) {
+				g.player.size += 1
+			}
 			target.active = false
 			spawn_target()
 		}
