@@ -18,9 +18,9 @@ Target :: struct {
 }
 
 Game_Memory :: struct {
-	player_pos: rl.Vector2,
-	targets:    [16]Target,
-	run:        bool,
+	player:  Target,
+	targets: [16]Target,
+	run:     bool,
 }
 
 g: ^Game_Memory
@@ -30,12 +30,11 @@ game_init :: proc() {
 	g = new(Game_Memory)
 
 	g^ = Game_Memory {
-		run     = true,
+		run = true,
 		targets = {},
+		player = Target{pos = rl.Vector2{0, 0}, size = rl.Vector2{10, 10}, active = true},
 	}
 
-
-	// append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
 	spawn_target()
 }
 
@@ -94,17 +93,17 @@ update :: proc() {
 	}
 
 	input = linalg.normalize0(input)
-	g.player_pos += input * rl.GetFrameTime() * 100
+	g.player.pos += input * rl.GetFrameTime() * 100
 
 	for &target in g.targets {
 		if (!target.active) {
 			continue
 		}
 		player_rect := rl.Rectangle {
-			x      = g.player_pos.x,
-			y      = g.player_pos.y,
-			height = 10,
-			width  = 10,
+			x      = g.player.pos.x,
+			y      = g.player.pos.y,
+			height = g.player.size.x,
+			width  = g.player.size.y,
 		}
 
 		target_rect := rl.Rectangle {
@@ -118,7 +117,6 @@ update :: proc() {
 			target.active = false
 			spawn_target()
 		}
-
 	}
 
 	if rl.IsKeyPressed(.ESCAPE) {
@@ -131,7 +129,13 @@ draw :: proc() {
 	rl.ClearBackground(rl.BLACK)
 
 	rl.BeginMode2D(game_camera())
-	rl.DrawRectangle(i32(g.player_pos.x), i32(g.player_pos.y), 10, 10, rl.BLUE)
+	rl.DrawRectangle(
+		i32(g.player.pos.x),
+		i32(g.player.pos.y),
+		i32(g.player.size.x),
+		i32(g.player.size.y),
+		rl.BLUE,
+	)
 
 	for t in g.targets {
 		if (!t.active) {
@@ -145,12 +149,7 @@ draw :: proc() {
 	rl.BeginMode2D(ui_camera())
 
 	rl.DrawText(
-		fmt.ctprintf(
-			"Position: %v, %v, Targets: %v",
-			i32(g.player_pos.x),
-			i32(g.player_pos.y),
-			g.targets[0].pos,
-		),
+		fmt.ctprintf("Position: %v, %v", i32(g.player.pos.x), i32(g.player.pos.y)),
 		5,
 		5,
 		8,
