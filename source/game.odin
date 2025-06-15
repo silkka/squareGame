@@ -23,6 +23,20 @@ Game_Memory :: struct {
 
 g: ^Game_Memory
 
+@(export)
+game_init :: proc() {
+	g = new(Game_Memory)
+
+	g^ = Game_Memory {
+		run     = true,
+		targets = make([dynamic]Target),
+	}
+
+
+	append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
+}
+
+
 game_camera :: proc() -> rl.Camera2D {
 	w := f32(rl.GetScreenWidth())
 	h := f32(rl.GetScreenHeight())
@@ -63,7 +77,7 @@ draw :: proc() {
 	rl.ClearBackground(rl.BLACK)
 
 	rl.BeginMode2D(game_camera())
-	rl.DrawRectangle(i32(g.player_pos.x), i32(g.player_pos.y), 10, 10, rl.RED)
+	rl.DrawRectangle(i32(g.player_pos.x), i32(g.player_pos.y), 10, 10, rl.BLUE)
 
 	for t in g.targets {
 		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), 10, 10, rl.RED)
@@ -86,6 +100,8 @@ draw :: proc() {
 	rl.EndDrawing()
 }
 
+// ######################### HOT RELOAD STUFF #########################
+
 @(export)
 game_update :: proc() {
 	update()
@@ -103,20 +119,6 @@ game_init_window :: proc() {
 	rl.SetTargetFPS(500)
 	rl.SetExitKey(nil)
 }
-
-@(export)
-game_init :: proc() {
-	g = new(Game_Memory)
-
-	g^ = Game_Memory {
-		run     = true,
-		targets = make([dynamic]Target),
-	}
-
-
-	append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
-}
-
 
 @(export)
 game_should_run :: proc() -> bool {
