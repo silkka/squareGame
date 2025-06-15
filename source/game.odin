@@ -19,7 +19,7 @@ Target :: struct {
 
 Game_Memory :: struct {
 	player_pos: rl.Vector2,
-	targets:    [dynamic]Target,
+	targets:    [16]Target,
 	run:        bool,
 }
 
@@ -31,7 +31,7 @@ game_init :: proc() {
 
 	g^ = Game_Memory {
 		run     = true,
-		targets = make([dynamic]Target),
+		targets = {},
 	}
 
 
@@ -64,8 +64,17 @@ spawn_target :: proc() {
 	}
 	pos := rl.GetScreenToWorld2D(posScreen, camera)
 
-
-	append(&g.targets, Target{pos = pos, size = rl.Vector2{size, size}, active = true})
+	// Find first inactive target slot
+	for &target in g.targets {
+		if !target.active {
+			target = Target {
+				pos    = pos,
+				size   = rl.Vector2{size, size},
+				active = true,
+			}
+			return
+		}
+	}
 }
 
 update :: proc() {
