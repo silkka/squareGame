@@ -6,6 +6,7 @@ package game
 
 import "core:fmt"
 import "core:math/linalg"
+import "core:math/rand"
 import rl "vendor:raylib"
 
 PIXEL_WINDOW_HEIGHT :: 180
@@ -33,7 +34,8 @@ game_init :: proc() {
 	}
 
 
-	append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
+	// append(&g.targets, Target{pos = rl.Vector2{10.0, 10.0}, size = rl.Vector2{10.0, 10.0}})
+	spawn_target()
 }
 
 
@@ -46,6 +48,23 @@ game_camera :: proc() -> rl.Camera2D {
 
 ui_camera :: proc() -> rl.Camera2D {
 	return {zoom = f32(rl.GetScreenHeight()) / PIXEL_WINDOW_HEIGHT}
+}
+
+spawn_target :: proc() {
+	size := rand.float32_range(5, 20)
+
+	w := f32(rl.GetScreenWidth())
+	h := f32(rl.GetScreenHeight())
+	camera := game_camera()
+	padding := size * camera.zoom
+	posScreen := rl.Vector2 {
+		rand.float32_range(padding, w - padding),
+		rand.float32_range(padding, h - padding),
+	}
+	pos := rl.GetScreenToWorld2D(posScreen, camera)
+
+
+	append(&g.targets, Target{pos = pos, size = rl.Vector2{size, size}})
 }
 
 update :: proc() {
@@ -88,7 +107,12 @@ draw :: proc() {
 	rl.BeginMode2D(ui_camera())
 
 	rl.DrawText(
-		fmt.ctprintf("Position: %v, %v", i32(g.player_pos.x), i32(g.player_pos.y)),
+		fmt.ctprintf(
+			"Position: %v, %v, Targets: %v",
+			i32(g.player_pos.x),
+			i32(g.player_pos.y),
+			g.targets[0].pos,
+		),
 		5,
 		5,
 		8,
@@ -114,9 +138,9 @@ game_update :: proc() {
 @(export)
 game_init_window :: proc() {
 	rl.SetConfigFlags({.WINDOW_RESIZABLE, .VSYNC_HINT})
-	rl.InitWindow(1280, 720, "Odin + Raylib + Hot Reload template!")
+	rl.InitWindow(1280, 720, "Collect squares")
 	rl.SetWindowPosition(200, 200)
-	rl.SetTargetFPS(500)
+	rl.SetTargetFPS(144)
 	rl.SetExitKey(nil)
 }
 
@@ -167,7 +191,7 @@ game_force_reload :: proc() -> bool {
 
 @(export)
 game_force_restart :: proc() -> bool {
-	return rl.IsKeyPressed(.F6)
+	return rl.IsKeyPressed(.R) && (rl.IsKeyDown(.LEFT_SUPER) || rl.IsKeyDown(.LEFT_CONTROL))
 }
 
 // In a web build, this is called when browser changes size. Remove the
