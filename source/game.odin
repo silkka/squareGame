@@ -137,7 +137,7 @@ draw :: proc() {
 		if (!t.active) {
 			continue
 		}
-		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), 10, 10, rl.RED)
+		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), i32(t.size.x), i32(t.size.y), rl.RED)
 	}
 
 	rl.EndMode2D()
