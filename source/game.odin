@@ -12,8 +12,9 @@ import rl "vendor:raylib"
 PIXEL_WINDOW_HEIGHT :: 180
 
 Target :: struct {
-	pos:  rl.Vector2,
-	size: rl.Vector2,
+	pos:    rl.Vector2,
+	size:   rl.Vector2,
+	active: bool,
 }
 
 Game_Memory :: struct {
@@ -58,13 +59,13 @@ spawn_target :: proc() {
 	camera := game_camera()
 	padding := size * camera.zoom
 	posScreen := rl.Vector2 {
-		rand.float32_range(padding, w - padding),
-		rand.float32_range(padding, h - padding),
+		rand.float32_range(padding, w - padding * 2),
+		rand.float32_range(padding, h - padding * 2),
 	}
 	pos := rl.GetScreenToWorld2D(posScreen, camera)
 
 
-	append(&g.targets, Target{pos = pos, size = rl.Vector2{size, size}})
+	append(&g.targets, Target{pos = pos, size = rl.Vector2{size, size}, active = true})
 }
 
 update :: proc() {
@@ -86,6 +87,31 @@ update :: proc() {
 	input = linalg.normalize0(input)
 	g.player_pos += input * rl.GetFrameTime() * 100
 
+	for &target in g.targets {
+		if (!target.active) {
+			continue
+		}
+		player_rect := rl.Rectangle {
+			x      = g.player_pos.x,
+			y      = g.player_pos.y,
+			height = 10,
+			width  = 10,
+		}
+
+		target_rect := rl.Rectangle {
+			x      = target.pos.x,
+			y      = target.pos.y,
+			height = target.size.x,
+			width  = target.size.y,
+		}
+
+		if (rl.CheckCollisionRecs(player_rect, target_rect)) {
+			target.active = false
+			spawn_target()
+		}
+
+	}
+
 	if rl.IsKeyPressed(.ESCAPE) {
 		g.run = false
 	}
@@ -99,6 +125,9 @@ draw :: proc() {
 	rl.DrawRectangle(i32(g.player_pos.x), i32(g.player_pos.y), 10, 10, rl.BLUE)
 
 	for t in g.targets {
+		if (!t.active) {
+			continue
+		}
 		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), 10, 10, rl.RED)
 	}
 
