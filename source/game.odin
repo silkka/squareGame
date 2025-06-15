@@ -20,6 +20,7 @@ Target :: struct {
 Game_Memory :: struct {
 	player:  Target,
 	targets: [16]Target,
+	score:   int,
 	run:     bool,
 }
 
@@ -33,6 +34,7 @@ game_init :: proc() {
 		run = true,
 		targets = {},
 		player = Target{pos = rl.Vector2{0, 0}, size = rl.Vector2{10, 10}, active = true},
+		score = 0,
 	}
 
 	spawn_target()
@@ -114,6 +116,7 @@ update :: proc() {
 		}
 
 		if (rl.CheckCollisionRecs(player_rect, target_rect)) {
+			g.score += 1
 			target.active = false
 			spawn_target()
 		}
@@ -148,13 +151,7 @@ draw :: proc() {
 
 	rl.BeginMode2D(ui_camera())
 
-	rl.DrawText(
-		fmt.ctprintf("Position: %v, %v", i32(g.player.pos.x), i32(g.player.pos.y)),
-		5,
-		5,
-		8,
-		rl.WHITE,
-	)
+	rl.DrawText(fmt.ctprintf("Score: %v", i32(g.score)), 5, 5, 8, rl.WHITE)
 
 	rl.EndMode2D()
 
