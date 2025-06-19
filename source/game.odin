@@ -15,6 +15,7 @@ Target :: struct {
 	pos:    rl.Vector2,
 	size:   rl.Vector2,
 	active: bool,
+	enemy:  bool,
 }
 
 Game_Memory :: struct {
@@ -53,29 +54,43 @@ ui_camera :: proc() -> rl.Camera2D {
 }
 
 spawn_target :: proc() {
-	size := rand.float32_range(5, 20)
-
-	w := f32(rl.GetScreenWidth())
-	h := f32(rl.GetScreenHeight())
-	camera := game_camera()
-	padding := size * camera.zoom
-	posScreen := rl.Vector2 {
-		rand.float32_range(padding, w - padding * 2),
-		rand.float32_range(padding, h - padding * 2),
-	}
-	pos := rl.GetScreenToWorld2D(posScreen, camera)
-
-	// Find first inactive target slot
-	for &target in g.targets {
-		if !target.active {
-			target = Target {
-				pos    = pos,
-				size   = rl.Vector2{size, size},
-				active = true,
-			}
-			return
+	create_target_at_random_position :: proc(enemy: bool) -> Target {
+		size := rand.float32_range(5, 20)
+		w := f32(rl.GetScreenWidth())
+		h := f32(rl.GetScreenHeight())
+		camera := game_camera()
+		padding := size * camera.zoom
+		posScreen := rl.Vector2 {
+			rand.float32_range(padding, w - padding * 2),
+			rand.float32_range(padding, h - padding * 2),
 		}
+		pos := rl.GetScreenToWorld2D(posScreen, camera)
+
+		return Target{pos = pos, size = rl.Vector2{size, size}, active = true, enemy = enemy}
 	}
+
+	find_and_create_target :: proc(enemy: bool) -> bool {
+		for &target in g.targets {
+			if !target.active {
+				target = create_target_at_random_position(enemy)
+				return true
+			}
+		}
+		return false
+	}
+
+	enemy := rand.float32() > 0.7
+
+
+	if find_and_create_target(enemy) {
+		// If enemy is created, also create a non-enemy
+		if enemy {
+			find_and_create_target(false)
+		}
+		return
+	}
+
+	assert(false, "No inactive target slot found, increase target count!!!")
 }
 
 update :: proc() {
@@ -147,7 +162,13 @@ draw :: proc() {
 		if (!t.active) {
 			continue
 		}
-		rl.DrawRectangle(i32(t.pos.x), i32(t.pos.y), i32(t.size.x), i32(t.size.y), rl.RED)
+		rl.DrawRectangle(
+			i32(t.pos.x),
+			i32(t.pos.y),
+			i32(t.size.x),
+			i32(t.size.y),
+			t.enemy ? rl.RED : rl.GREEN,
+		)
 	}
 
 	rl.EndMode2D()
