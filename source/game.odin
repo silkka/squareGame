@@ -19,10 +19,11 @@ Target :: struct {
 }
 
 Game_Memory :: struct {
-	player:  Target,
-	targets: [16]Target,
-	score:   int,
-	run:     bool,
+	player:       Target,
+	targets:      [16]Target,
+	score:        int,
+	run:          bool,
+	start_screen: bool,
 }
 
 g: ^Game_Memory
@@ -36,9 +37,8 @@ game_init :: proc() {
 		targets = {},
 		player = Target{pos = rl.Vector2{0, 0}, size = rl.Vector2{10, 10}, active = true},
 		score = 0,
+		start_screen = true,
 	}
-
-	spawn_target()
 }
 
 
@@ -94,6 +94,20 @@ spawn_target :: proc() {
 }
 
 update :: proc() {
+	if g.start_screen {
+		if rl.IsKeyPressed(.SPACE) {
+			g.start_screen = false
+			g.score = 0
+			g.player.size = rl.Vector2{10, 10}
+			g.player.pos = rl.Vector2{0, 0}
+			for &target in g.targets {
+				target.active = false
+			}
+			spawn_target()
+		}
+		return
+	}
+
 	input: rl.Vector2
 
 	if rl.IsKeyDown(.UP) || rl.IsKeyDown(.W) {
@@ -131,6 +145,12 @@ update :: proc() {
 		}
 
 		if (rl.CheckCollisionRecs(player_rect, target_rect)) {
+			if target.enemy {
+				// Enemy hit - restart the game
+				g.start_screen = true
+				return
+			}
+
 			g.score += 1
 			if (g.score % 5 == 0) {
 				g.player.size += 1
@@ -149,35 +169,59 @@ draw :: proc() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.BLACK)
 
-	rl.BeginMode2D(game_camera())
-	rl.DrawRectangle(
-		i32(g.player.pos.x),
-		i32(g.player.pos.y),
-		i32(g.player.size.x),
-		i32(g.player.size.y),
-		rl.BLUE,
-	)
+	if g.start_screen {
+		// Draw start screen
+		rl.BeginMode2D(ui_camera())
 
-	for t in g.targets {
-		if (!t.active) {
-			continue
+		// Title
+		rl.DrawText("COLLECT SQUARES", 10, 10, 20, rl.WHITE)
+
+		// Show final score if there was one
+		if g.score > 0 {
+			rl.DrawText(fmt.ctprintf("Final Score: %v", i32(g.score)), 10, 30, 16, rl.YELLOW)
+			rl.DrawText("Press SPACE to restart", 10, 50, 10, rl.GRAY)
+		} else {
+			rl.DrawText("Press SPACE to start", 10, 30, 10, rl.GRAY)
+			rl.DrawText("Collect green squares, avoid red enemies", 10, 50, 10, rl.GRAY)
+			rl.DrawText("Use WASD or arrow keys to move", 10, 70, 10, rl.GRAY)
+			rl.DrawText("Press ESC to exit", 10, 90, 10, rl.WHITE)
 		}
+
+		// Instructions
+
+		rl.EndMode2D()
+	} else {
+		// Draw normal game
+		rl.BeginMode2D(game_camera())
 		rl.DrawRectangle(
-			i32(t.pos.x),
-			i32(t.pos.y),
-			i32(t.size.x),
-			i32(t.size.y),
-			t.enemy ? rl.RED : rl.GREEN,
+			i32(g.player.pos.x),
+			i32(g.player.pos.y),
+			i32(g.player.size.x),
+			i32(g.player.size.y),
+			rl.BLUE,
 		)
+
+		for t in g.targets {
+			if (!t.active) {
+				continue
+			}
+			rl.DrawRectangle(
+				i32(t.pos.x),
+				i32(t.pos.y),
+				i32(t.size.x),
+				i32(t.size.y),
+				t.enemy ? rl.RED : rl.GREEN,
+			)
+		}
+
+		rl.EndMode2D()
+
+		rl.BeginMode2D(ui_camera())
+
+		rl.DrawText(fmt.ctprintf("Score: %v", i32(g.score)), 5, 5, 8, rl.WHITE)
+
+		rl.EndMode2D()
 	}
-
-	rl.EndMode2D()
-
-	rl.BeginMode2D(ui_camera())
-
-	rl.DrawText(fmt.ctprintf("Score: %v", i32(g.score)), 5, 5, 8, rl.WHITE)
-
-	rl.EndMode2D()
 
 	rl.EndDrawing()
 }
