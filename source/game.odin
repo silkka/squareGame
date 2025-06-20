@@ -11,6 +11,11 @@ import rl "vendor:raylib"
 
 PIXEL_WINDOW_HEIGHT :: 180
 
+Game_Scene :: enum {
+	START_SCREEN,
+	PLAYING,
+}
+
 Target :: struct {
 	pos:    rl.Vector2,
 	size:   rl.Vector2,
@@ -19,11 +24,11 @@ Target :: struct {
 }
 
 Game_Memory :: struct {
-	player:       Target,
-	targets:      [16]Target,
-	score:        int,
-	run:          bool,
-	start_screen: bool,
+	player:  Target,
+	targets: [16]Target,
+	score:   int,
+	run:     bool,
+	scene:   Game_Scene,
 }
 
 g: ^Game_Memory
@@ -37,7 +42,7 @@ game_init :: proc() {
 		targets = {},
 		player = Target{pos = rl.Vector2{0, 0}, size = rl.Vector2{10, 10}, active = true},
 		score = 0,
-		start_screen = true,
+		scene = .START_SCREEN,
 	}
 }
 
@@ -94,9 +99,9 @@ spawn_target :: proc() {
 }
 
 update :: proc() {
-	if g.start_screen {
+	if g.scene == .START_SCREEN {
 		if rl.IsKeyPressed(.SPACE) {
-			g.start_screen = false
+			g.scene = .PLAYING
 			g.score = 0
 			g.player.size = rl.Vector2{10, 10}
 			g.player.pos = rl.Vector2{0, 0}
@@ -147,7 +152,7 @@ update :: proc() {
 		if (rl.CheckCollisionRecs(player_rect, target_rect)) {
 			if target.enemy {
 				// Enemy hit - restart the game
-				g.start_screen = true
+				g.scene = .START_SCREEN
 				return
 			}
 
@@ -169,7 +174,7 @@ draw :: proc() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.BLACK)
 
-	if g.start_screen {
+	if g.scene == .START_SCREEN {
 		// Draw start screen
 		rl.BeginMode2D(ui_camera())
 
