@@ -168,10 +168,28 @@ update_input :: proc(input: ^Input_State) {
 // =============================================================================
 
 spawn_target :: proc(targets: ^[MAX_TARGETS]Target, camera: ^Camera_System) -> bool {
+	// Determine if this should be an enemy
+	should_spawn_enemy := rand.float32() < ENEMY_SPAWN_CHANCE
+
 	// Find inactive target slot
 	for i in 0 ..< MAX_TARGETS {
 		if !targets[i].active {
 			targets[i] = create_target_at_random_position(camera)
+			targets[i].enemy = should_spawn_enemy
+
+			// If enemy is created, also create a non-enemy
+			if should_spawn_enemy {
+				// Find another inactive slot for the non-enemy
+				for j in 0 ..< MAX_TARGETS {
+					if !targets[j].active {
+						targets[j] = create_target_at_random_position(camera)
+						// This one stays as non-enemy (default)
+						return true
+					}
+				}
+				// If no slot found for non-enemy, just return with the enemy
+				return true
+			}
 			return true
 		}
 	}
@@ -193,10 +211,10 @@ create_target_at_random_position :: proc(camera: ^Camera_System) -> Target {
 	// Convert screen position to world position
 	pos := rl.GetScreenToWorld2D(pos_screen, camera.game_camera)
 
-	// Determine if this is an enemy
-	is_enemy := rand.float32() < ENEMY_SPAWN_CHANCE
-
-	return Target{entity = Entity{pos = pos, size = {size, size}, active = true}, enemy = is_enemy}
+	return Target {
+		entity = Entity{pos = pos, size = {size, size}, active = true},
+		enemy = false, // Always create non-enemy by default
+	}
 }
 
 update_targets :: proc(targets: ^[MAX_TARGETS]Target, camera: ^Camera_System, delta_time: f32) {
