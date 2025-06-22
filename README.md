@@ -1,3 +1,11 @@
+# Square Game
+
+- Testing [Hot Reloading](http://zylinski.se/posts/hot-reload-gameplay-code/)
+
+![image](https://github.com/user-attachments/assets/7060040b-7f5b-45c3-987b-e9d4dab9d589)
+
+
+
 # Odin + Raylib + Hot Reload template
 
 This is an [Odin](https://github.com/odin-lang/Odin) + [Raylib](https://github.com/raysan5/raylib) game template with [Hot Reloading](http://zylinski.se/posts/hot-reload-gameplay-code/) pre-setup. It makes it possible to reload gameplay code while the game is running.
